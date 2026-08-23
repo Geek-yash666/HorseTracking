@@ -189,6 +189,7 @@ function CardActions({
             Move to
           </p>
           <select
+            name="spaceId"
             defaultValue={event.spaceId}
             onChange={(e) => e.currentTarget.form?.requestSubmit()}
             aria-label="Move to another paddock"
@@ -447,6 +448,7 @@ function BoardItem({
                 className="flex-1"
               >
                 <select
+                  name="spaceId"
                   defaultValue={event.spaceId}
                   onChange={(e) => {
                     e.currentTarget.form?.requestSubmit();

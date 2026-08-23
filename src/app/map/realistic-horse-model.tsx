@@ -183,8 +183,10 @@ export function RealisticHorseModel({
     };
   }, [profile]);
 
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
+  const timeRef = useRef(0);
+  useFrame((_, delta) => {
+    timeRef.current += delta;
+    const t = timeRef.current;
 
     // 1. Natural idle breathing sway
     if (bodyRootRef.current) {

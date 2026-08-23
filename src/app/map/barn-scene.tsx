@@ -1001,7 +1001,7 @@ function SceneContents({
 export default function BarnScene(props: SceneProps) {
   return (
     <Canvas
-      shadows
+      shadows={{ type: THREE.PCFShadowMap }}
       dpr={[1, 2]}
       camera={{ position: [38, 30, 42], fov: 40, near: 0.5, far: 450 }}
       gl={{ antialias: true }}
