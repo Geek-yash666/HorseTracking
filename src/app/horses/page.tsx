@@ -1,0 +1,41 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { HorseDirectory, type DirectoryHorse } from "./horse-directory";
+
+export default async function HorsesPage() {
+  const horses = await prisma.horse.findMany({
+    orderBy: { name: "asc" },
+    include: { groups: { include: { group: { select: { name: true } } } } },
+  });
+
+  const directoryHorses: DirectoryHorse[] = horses.map((horse) => ({
+    id: horse.id,
+    name: horse.name,
+    notes: horse.notes,
+    breed: horse.breed,
+    gender: horse.gender,
+    ageYears: horse.ageYears,
+    lifecycle: horse.lifecycle,
+    photoUrl: horse.photoUrl,
+    groups: horse.groups.map((gh) => gh.group.name),
+  }));
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        kicker="Barn setup"
+        title="Horses"
+        description="The whole barn at a glance — search, filter, and manage every horse in your care."
+        actions={
+          <Button render={<Link href="/horses/new" />} nativeButton={false}>
+            <Plus data-icon="inline-start" /> Add Horse
+          </Button>
+        }
+      />
+      <HorseDirectory horses={directoryHorses} />
+    </div>
+  );
+}
