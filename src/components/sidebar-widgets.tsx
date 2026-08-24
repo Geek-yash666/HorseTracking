@@ -17,6 +17,7 @@ import {
   ChevronUp,
   Droplets,
   MapPin,
+  Navigation,
   Search,
   Wind,
   X,
@@ -28,11 +29,13 @@ import {
   describeWeatherCode,
   fetchWeather,
   searchLocations,
+  requestBarnGPSLocation,
   type WeatherData,
   type WeatherLocation,
 } from "@/lib/weather";
 
 const LOC_CUSTOM_STORAGE_KEY = "onstride-weather-custom-loc";
+const GPS_STORAGE_KEY = "onstride-weather-gps-loc";
 const UNIT_STORAGE_KEY = "onstride-weather-unit";
 
 const subscribeNoop = () => () => {};
@@ -42,6 +45,11 @@ const readStoredCustomLoc = () =>
     ? null
     : window.localStorage.getItem(LOC_CUSTOM_STORAGE_KEY);
 
+const readStoredGPSLoc = () =>
+  typeof window === "undefined"
+    ? null
+    : window.localStorage.getItem(GPS_STORAGE_KEY);
+
 const readStoredUnit = () =>
   typeof window === "undefined" ? null : window.localStorage.getItem(UNIT_STORAGE_KEY);
 
@@ -49,6 +57,18 @@ const serverNull = () => null;
 
 function useStoredCustomLocation(): WeatherLocation | null {
   const raw = useSyncExternalStore(subscribeNoop, readStoredCustomLoc, serverNull);
+  return useMemo(() => {
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }, [raw]);
+}
+
+function useStoredGPSLocation(): WeatherLocation | null {
+  const raw = useSyncExternalStore(subscribeNoop, readStoredGPSLoc, serverNull);
   return useMemo(() => {
     if (!raw) return null;
     try {
@@ -95,13 +115,23 @@ function offsetIsoDate(isoDate: string, deltaDays: number): string {
 
 function WeatherPanel({ todayISO }: { todayISO: string }) {
   const storedLocation = useStoredCustomLocation();
+  const storedGPSLocation = useStoredGPSLocation();
   const storedUnit = useStoredUnit();
 
-  // Derived, never synced: stored preference hydrates via
-  // useSyncExternalStore after mount; an explicit pick overrides it.
+  // Priority: GPS > Custom > Preset
   const [locationOverride, setLocationOverride] = useState<WeatherLocation | null>(null);
+  const [gpsStatus, setGPSStatus] = useState<"idle" | "loading" | "error">("idle");
   const activeLocation =
-    locationOverride ?? storedLocation ?? PRESET_WEATHER_LOCATIONS[0];
+    locationOverride ?? storedGPSLocation ?? storedLocation ?? PRESET_WEATHER_LOCATIONS[0];
+  
+  // Track location source for display
+  const locationSource = locationOverride
+    ? "custom"
+    : storedGPSLocation
+      ? "gps"
+      : storedLocation
+        ? "custom"
+        : "preset";
 
   const [unitOverride, setUnitOverride] = useState<"f" | "c" | null>(null);
   const unit: "f" | "c" = unitOverride ?? storedUnit;
@@ -181,7 +211,24 @@ function WeatherPanel({ todayISO }: { todayISO: string }) {
   const selectLocation = (loc: WeatherLocation) => {
     setLocationOverride(loc);
     window.localStorage.setItem(LOC_CUSTOM_STORAGE_KEY, JSON.stringify(loc));
+    // Clear GPS when user manually selects a city
+    window.localStorage.removeItem(GPS_STORAGE_KEY);
     closeSearch();
+  };
+
+  const handleUseGPS = async () => {
+    setGPSStatus("loading");
+    try {
+      const gpsLoc = await requestBarnGPSLocation();
+      setLocationOverride(gpsLoc);
+      window.localStorage.setItem(GPS_STORAGE_KEY, JSON.stringify(gpsLoc));
+      // Clear custom location when using GPS
+      window.localStorage.removeItem(LOC_CUSTOM_STORAGE_KEY);
+      setGPSStatus("idle");
+    } catch {
+      setGPSStatus("error");
+      setTimeout(() => setGPSStatus("idle"), 3000);
+    }
   };
 
   const toggleUnit = () => {
@@ -230,6 +277,43 @@ function WeatherPanel({ todayISO }: { todayISO: string }) {
             )}
           </button>
         </div>
+      </div>
+
+      {/* GPS Location Button - Prominent */}
+      <button
+        type="button"
+        onClick={handleUseGPS}
+        disabled={gpsStatus === "loading"}
+        className={cn(
+          "mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold transition-all",
+          gpsStatus === "loading"
+            ? "border-onstride-gold/30 bg-onstride-gold/10 text-onstride-gold animate-pulse"
+            : gpsStatus === "error"
+              ? "border-red-500/30 bg-red-500/10 text-red-400"
+              : "border-onstride-gold/40 bg-onstride-gold/10 text-onstride-gold hover:bg-onstride-gold/20 hover:border-onstride-gold/60"
+        )}
+      >
+        <Navigation className={cn("size-3.5", gpsStatus === "loading" && "animate-spin")} />
+        {gpsStatus === "loading"
+          ? "Getting GPS location..."
+          : gpsStatus === "error"
+            ? "GPS unavailable — tap to retry"
+            : "Use barn GPS location"}
+      </button>
+
+      {/* Location Source Indicator */}
+      <div className="mt-2 flex items-center justify-center gap-1.5 text-[0.6rem]">
+        <span
+          className={cn(
+            "size-1.5 rounded-full",
+            locationSource === "gps" ? "bg-green-400" : "bg-onstride-gold"
+          )}
+        />
+        <span className="text-onstride-cream/50">
+          {locationSource === "gps"
+            ? "GPS (precise)"
+            : `Using ${locationSource === "custom" ? "selected city" : "default location"}`}
+        </span>
       </div>
 
       {/* Location Selector Button with Search Trigger */}

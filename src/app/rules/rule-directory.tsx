@@ -108,15 +108,7 @@ function StatCard({
   );
 }
 
-function RuleKebabMenu({
-  ruleId,
-  groupName,
-  shift,
-}: {
-  ruleId: string;
-  groupName: string;
-  shift: string;
-}) {
+function RuleKebabMenu({ ruleId, groupName, shift, onEdit }: { ruleId: string; groupName: string; shift: string; onEdit?: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -141,13 +133,16 @@ function RuleKebabMenu({
       </Button>
       {open && (
         <div className="absolute right-0 top-9 z-40 w-44 overflow-hidden rounded-xl border border-onstride-green/10 bg-popover py-1 shadow-[var(--shadow-panel-lg)] text-foreground">
-          <Link
-            href={`/rules/${ruleId}/edit`}
-            onClick={() => setOpen(false)}
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onEdit?.();
+            }}
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-muted"
           >
             <Pencil className="size-3.5 opacity-60" /> Edit rule
-          </Link>
+          </button>
           <form action={deleteRule.bind(null, ruleId)} className="block">
             <ConfirmSubmit
               message={`Delete the ${shift} rule for ${groupName}?`}
@@ -164,7 +159,7 @@ function RuleKebabMenu({
   );
 }
 
-export function RuleDirectory({ rules }: { rules: DirectoryRule[] }) {
+export function RuleDirectory({ rules, onEdit }: { rules: DirectoryRule[]; onEdit?: (item: DirectoryRule) => void }) {
   const [query, setQuery] = useState("");
   const [shiftFilter, setShiftFilter] = useState<"all" | "AM" | "PM">("all");
   const [dayFilter, setDayFilter] = useState<number | "all">("all");
@@ -456,11 +451,7 @@ export function RuleDirectory({ rules }: { rules: DirectoryRule[] }) {
                     )}
                   </div>
 
-                  <RuleKebabMenu
-                    ruleId={rule.id}
-                    groupName={rule.groupName}
-                    shift={rule.shift}
-                  />
+                  <RuleKebabMenu ruleId={rule.id} groupName={rule.groupName} shift={rule.shift} onEdit={() => onEdit?.(rule)} />
                 </div>
 
                 {/* Cohort to Target Space Pairing Visual Card */}
@@ -568,8 +559,7 @@ export function RuleDirectory({ rules }: { rules: DirectoryRule[] }) {
                     <Button
                       variant="outline"
                       size="sm"
-                      render={<Link href={`/rules/${rule.id}/edit`} />}
-                      nativeButton={false}
+                      onClick={() => onEdit?.(rule)}
                     >
                       <Pencil data-icon="inline-start" className="size-3.5" /> Edit rule
                     </Button>
@@ -658,8 +648,7 @@ export function RuleDirectory({ rules }: { rules: DirectoryRule[] }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    render={<Link href={`/rules/${rule.id}/edit`} />}
-                    nativeButton={false}
+                    onClick={() => onEdit?.(rule)}
                   >
                     <Pencil data-icon="inline-start" className="size-3.5" /> Edit
                   </Button>

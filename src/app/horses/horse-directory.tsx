@@ -135,13 +135,7 @@ function StatBlock({
   );
 }
 
-function KebabMenu({
-  horse,
-  onView,
-}: {
-  horse: DirectoryHorse;
-  onView: () => void;
-}) {
+function KebabMenu({ horse, onView, onEdit }: { horse: DirectoryHorse; onView: () => void; onEdit?: (item: DirectoryHorse) => void }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -176,13 +170,16 @@ function KebabMenu({
           >
             <UserRound className="size-3.5 opacity-60" /> View profile
           </button>
-          <Link
-            href={`/horses/${horse.id}/edit`}
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-muted"
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onEdit?.(horse);
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium hover:bg-muted"
           >
             <Pencil className="size-3.5 opacity-60" /> Edit
-          </Link>
+          </button>
           <form action={deleteHorse.bind(null, horse.id)} className="block">
             <ConfirmSubmit
               message={getHorseDeleteWarning(horse)}
@@ -219,7 +216,7 @@ function MetaRow({ horse, className }: { horse: DirectoryHorse; className?: stri
   );
 }
 
-export function HorseDirectory({ horses }: { horses: DirectoryHorse[] }) {
+export function HorseDirectory({ horses, onEdit }: { horses: DirectoryHorse[]; onEdit?: (item: DirectoryHorse) => void }) {
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<Set<string>>(new Set(LIFECYCLES));
   const [genders, setGenders] = useState<Set<string>>(new Set(GENDERS));
@@ -724,8 +721,7 @@ export function HorseDirectory({ horses }: { horses: DirectoryHorse[] }) {
 
                   <div className="mt-auto flex flex-wrap items-center gap-2 pt-6 border-t border-onstride-green/8 mt-6">
                     <Button
-                      render={<Link href={`/horses/${viewing.id}/edit`} />}
-                      nativeButton={false}
+                      onClick={() => onEdit?.(viewing)}
                       size="sm"
                     >
                       Edit profile

@@ -80,6 +80,38 @@ export type WeatherData = {
 };
 
 /**
+ * Request the barn's GPS location via browser geolocation API.
+ * Returns a WeatherLocation with exact coordinates for hyper-local weather.
+ */
+export function requestBarnGPSLocation(): Promise<WeatherLocation> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported by this browser"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          id: "gps-barn",
+          name: "Barn (GPS Location)",
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
+      },
+      (error) => {
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000, // Cache for 5 minutes
+      }
+    );
+  });
+}
+
+/**
  * Search worldwide cities/towns using Open-Meteo Geocoding API.
  * Free, fast, CORS-enabled, no API key needed.
  */

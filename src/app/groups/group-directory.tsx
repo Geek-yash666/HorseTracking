@@ -181,7 +181,7 @@ function GroupKebabMenu({
   );
 }
 
-export function GroupDirectory({ groups }: { groups: DirectoryGroup[] }) {
+export function GroupDirectory({ groups, onEdit }: { groups: DirectoryGroup[]; onEdit?: (item: DirectoryGroup) => void }) {
   const [query, setQuery] = useState("");
   const [sizeFilter, setSizeFilter] = useState<"all" | "pairs" | "herds">("all");
   const [sortKey, setSortKey] = useState<SortKey>("name-asc");
@@ -539,8 +539,7 @@ export function GroupDirectory({ groups }: { groups: DirectoryGroup[] }) {
                     <Button
                       variant="outline"
                       size="sm"
-                      render={<Link href={`/groups/${group.id}/edit`} />}
-                      nativeButton={false}
+                      onClick={() => onEdit?.(group)}
                     >
                       <Pencil data-icon="inline-start" className="size-3.5" /> Edit
                     </Button>
@@ -607,8 +606,7 @@ export function GroupDirectory({ groups }: { groups: DirectoryGroup[] }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  render={<Link href={`/groups/${group.id}/edit`} />}
-                  nativeButton={false}
+                  onClick={() => onEdit?.(group)}
                 >
                   <Pencil data-icon="inline-start" className="size-3.5" /> Edit
                 </Button>
@@ -777,8 +775,7 @@ export function GroupDirectory({ groups }: { groups: DirectoryGroup[] }) {
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-onstride-green/10 bg-muted/20 p-5">
                 <div className="flex items-center gap-2">
                   <Button
-                    render={<Link href={`/groups/${viewing.id}/edit`} />}
-                    nativeButton={false}
+                    onClick={() => onEdit?.(viewing)}
                     size="sm"
                   >
                     <Pencil data-icon="inline-start" className="size-3.5" /> Edit group

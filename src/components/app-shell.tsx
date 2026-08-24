@@ -5,12 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   ClipboardList,
-  Fence,
   KanbanSquare,
   Map,
-  ScrollText,
-  ShieldAlert,
-  Users,
   Menu,
   X,
 } from "lucide-react";
@@ -18,66 +14,45 @@ import { cn } from "@/lib/utils";
 import { BrandLockup } from "@/components/icons";
 import { SidebarWidgets } from "@/components/sidebar-widgets";
 
-const NAV_SECTIONS = [
-  {
-    label: "Operations",
-    items: [
-      { href: "/board", label: "Today's Board", icon: KanbanSquare },
-      { href: "/map", label: "Barn Map", icon: Map },
-    ],
-  },
-  {
-    label: "Barn setup",
-    items: [
-      { href: "/horses", label: "Horses", icon: ClipboardList },
-      { href: "/spaces", label: "Spaces", icon: Fence },
-      { href: "/groups", label: "Groups", icon: Users },
-      { href: "/rules", label: "Schedule Rules", icon: ScrollText },
-      { href: "/compatibility", label: "Compatibility", icon: ShieldAlert },
-    ],
-  },
+const NAV_ITEMS = [
+  { href: "/board", label: "Board", icon: KanbanSquare },
+  { href: "/map", label: "Map", icon: Map },
+  { href: "/barn", label: "Barn", icon: ClipboardList },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-6">
-      {NAV_SECTIONS.map((section) => (
-        <div key={section.label} className="flex flex-col gap-1.5">
-          <p className="px-3 text-[0.6rem] font-semibold uppercase tracking-[0.28em] text-onstride-cream/40">
-            {section.label}
-          </p>
-          {section.items.map((item) => {
-            const active =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                  active
-                    ? "bg-white/8 font-medium text-onstride-cream"
-                    : "text-onstride-cream/60 hover:bg-white/5 hover:text-onstride-cream"
-                )}
-              >
-                <span
-                  className={cn(
-                    "absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-onstride-gold transition-opacity",
-                    active ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <Icon className="size-4 shrink-0 text-onstride-gold/80" />
-                {item.label}
-              </Link>
-              );
-          })}
-        </div>
-      ))}
+    <nav className="flex flex-col gap-1">
+      {NAV_ITEMS.map((item) => {
+        const active =
+          pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+              active
+                ? "bg-white/8 font-medium text-onstride-cream"
+                : "text-onstride-cream/60 hover:bg-white/5 hover:text-onstride-cream"
+            )}
+          >
+            <span
+              className={cn(
+                "absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-onstride-gold transition-opacity",
+                active ? "opacity-100" : "opacity-0"
+              )}
+            />
+            <Icon className="size-4 shrink-0 text-onstride-gold/80" />
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -104,7 +79,7 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/10 bg-gradient-to-b from-[#0c1c15] via-[#10241c] to-[#152f24] lg:flex">
         <div className="flex items-center px-5 pb-6 pt-7">
-          <Link href="/" className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-onstride-gold/60">
+          <Link href="/board" className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-onstride-gold/60">
             <BrandLockup />
           </Link>
         </div>
@@ -122,7 +97,7 @@ export function AppShell({
 
       {/* Mobile top bar */}
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-[#10241c] px-4 lg:hidden">
-        <Link href="/">
+        <Link href="/board">
           <BrandLockup compact />
         </Link>
         <button
@@ -130,7 +105,7 @@ export function AppShell({
           onClick={() => setMobileOpen((v) => !v)}
           aria-expanded={mobileOpen}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          className="flex size-9 items-center justify-center rounded-lg border border-white/15 text-onstride-cream/90 transition-colors hover:bg-white/10"
+          className="flex size-10 items-center justify-center rounded-lg border border-white/15 text-onstride-cream/90 transition-colors hover:bg-white/10"
         >
           {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>

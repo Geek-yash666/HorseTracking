@@ -188,7 +188,7 @@ function SpaceKebabMenu({
   );
 }
 
-export function SpaceDirectory({ spaces }: { spaces: DirectorySpace[] }) {
+export function SpaceDirectory({ spaces, onEdit }: { spaces: DirectorySpace[]; onEdit?: (item: DirectorySpace) => void }) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [warningFilter, setWarningFilter] = useState<boolean>(false);
@@ -514,8 +514,7 @@ export function SpaceDirectory({ spaces }: { spaces: DirectorySpace[] }) {
                       <Button
                         variant="outline"
                         size="sm"
-                        render={<Link href={`/spaces/${space.id}/edit`} />}
-                        nativeButton={false}
+                        onClick={() => onEdit?.(space)}
                       >
                         <Pencil data-icon="inline-start" className="size-3.5" /> Edit
                       </Button>
@@ -580,8 +579,7 @@ export function SpaceDirectory({ spaces }: { spaces: DirectorySpace[] }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    render={<Link href={`/spaces/${space.id}/edit`} />}
-                    nativeButton={false}
+                    onClick={() => onEdit?.(space)}
                   >
                     <Pencil data-icon="inline-start" className="size-3.5" /> Edit
                   </Button>
@@ -724,8 +722,7 @@ export function SpaceDirectory({ spaces }: { spaces: DirectorySpace[] }) {
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-onstride-green/10 bg-muted/20 p-5">
                 <div className="flex items-center gap-2">
                   <Button
-                    render={<Link href={`/spaces/${viewing.id}/edit`} />}
-                    nativeButton={false}
+                    onClick={() => onEdit?.(viewing)}
                     size="sm"
                   >
                     <Pencil data-icon="inline-start" className="size-3.5" /> Edit space

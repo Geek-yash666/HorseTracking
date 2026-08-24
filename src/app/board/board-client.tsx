@@ -7,10 +7,6 @@ import {
   Search,
   CheckCircle2,
   Clock,
-  EyeOff,
-  Home,
-  LayoutGrid,
-  List,
   MoreVertical,
   NotebookPen,
   Pencil,
@@ -21,7 +17,8 @@ import {
   Trash2,
   UserRound,
   X,
-  ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,37 +100,9 @@ type SpecialGroup = {
   capacity: number | null;
 };
 
-const STATUS_META: Record<
-  string,
-  { label: string; dot: string; icon: ComponentType<{ className?: string }> }
-> = {
-  out: { label: "Out on pasture", dot: "bg-status-in", icon: Sun },
-  scheduled: {
-    label: "Waiting to go out",
-    dot: "bg-status-out-strong",
-    icon: Clock,
-  },
-  in: { label: "Back in the barn", dot: "bg-onstride-moss", icon: CheckCircle2 },
-  skipped: { label: "Staying in", dot: "bg-status-skipped", icon: Home },
-};
-
 /* ------------------------------------------------------------------ */
 /* Shared bits                                                         */
 /* ------------------------------------------------------------------ */
-
-function InitialAvatar({ name, className }: { name: string; className?: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full border border-onstride-green/8 bg-[#efe9dc] font-display text-sm font-semibold text-onstride-green/70",
-        className
-      )}
-    >
-      {name[0]?.toUpperCase()}
-    </span>
-  );
-}
 
 function CardActions({
   event,
@@ -147,23 +116,23 @@ function CardActions({
   onViewProfile: () => void;
 }) {
   const item =
-    "flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium hover:bg-muted transition-colors";
+    "flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium hover:bg-muted transition-colors";
   return (
     <>
       <MenuItemButton onClick={onViewProfile}>
-        <UserRound className="size-3.5 opacity-60" /> View Horse Profile
+        <UserRound className="size-4 opacity-60" /> View Profile
       </MenuItemButton>
 
       {event.status === "scheduled" && (
         <>
           <form action={markOut.bind(null, event.id)}>
             <button type="submit" className={item}>
-              <Sun className="size-3.5 opacity-60 text-status-out-strong" /> Turn out now
+              <Sun className="size-4 opacity-60 text-amber-600" /> Turn out now
             </button>
           </form>
           <form action={markSkipped.bind(null, event.id)}>
             <button type="submit" className={item}>
-              <Ban className="size-3.5 opacity-60 text-destructive" /> Skip today
+              <Ban className="size-4 opacity-60 text-destructive" /> Skip today
             </button>
           </form>
         </>
@@ -171,21 +140,21 @@ function CardActions({
       {event.status === "out" && (
         <form action={markIn.bind(null, event.id)}>
           <button type="submit" className={item}>
-            <CheckCircle2 className="size-3.5 opacity-60 text-status-in" /> Bring in
+            <CheckCircle2 className="size-4 opacity-60 text-status-in" /> Bring in
           </button>
         </form>
       )}
       {(event.status === "in" || event.status === "skipped") && (
         <form action={resetEvent.bind(null, event.id)}>
           <button type="submit" className={item}>
-            <Clock className="size-3.5 opacity-60" /> Undo status
+            <Clock className="size-4 opacity-60" /> Undo status
           </button>
         </form>
       )}
 
       {spaces.length > 0 && (
-        <form action={updateEventSpace.bind(null, event.id)} className="px-3 py-1.5">
-          <p className="mb-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-onstride-green/45">
+        <form action={updateEventSpace.bind(null, event.id)} className="px-3 py-2">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-onstride-green/45">
             Move to
           </p>
           <select
@@ -193,7 +162,7 @@ function CardActions({
             defaultValue={event.spaceId}
             onChange={(e) => e.currentTarget.form?.requestSubmit()}
             aria-label="Move to another paddock"
-            className="h-7 w-full cursor-pointer rounded-md border border-input bg-card px-1.5 text-xs font-medium text-onstride-green/80 focus-visible:outline-none"
+            className="h-9 w-full cursor-pointer rounded-lg border border-input bg-card px-2 text-sm font-medium text-onstride-green/80 focus-visible:outline-none"
           >
             {spaces.map((s) => (
               <option key={s.id} value={s.id}>
@@ -205,7 +174,7 @@ function CardActions({
       )}
 
       <MenuItemButton onClick={onEditNote}>
-        <NotebookPen className="size-3.5 opacity-60 text-amber-700" />
+        <NotebookPen className="size-4 opacity-60 text-amber-700" />
         {event.note ? "Edit note" : "Add note"}
       </MenuItemButton>
 
@@ -214,9 +183,9 @@ function CardActions({
           message={`Remove ${event.horseName}'s ${event.shift} turnout from the board?`}
           variant="ghost"
           size="sm"
-          className="w-full justify-start rounded-none px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className="w-full justify-start rounded-none px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
         >
-          <Trash2 data-icon="inline-start" /> Remove from board
+          <Trash2 data-icon="inline-start" /> Remove
         </ConfirmSubmit>
       </form>
     </>
@@ -234,49 +203,42 @@ function MenuItemButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium hover:bg-muted"
+      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
     >
       {children}
     </button>
   );
 }
 
-/**
- * One horse on the board. Renders as a photo card (out), an initial
- * card (everywhere else), or a dense list row; the kebab carries every
- * mutation so the compact layout stays tappable.
- */
+/* ------------------------------------------------------------------ */
+/* Board Item — Simplified card with one-tap actions                   */
+/* ------------------------------------------------------------------ */
+
 function BoardItem({
   event,
   spaces,
-  display,
+  column,
   onOpenProfile,
   onOpenNoteEditor,
 }: {
   event: BoardEventDto;
   spaces: SpaceOption[];
-  display: "card-out" | "card" | "conflict" | "list";
+  column: "out" | "scheduled" | "done";
   onOpenProfile?: (horseId: string) => void;
   onOpenNoteEditor?: (event: BoardEventDto) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [resolveOpen, setResolveOpen] = useState(false);
 
   const metaLine =
-    event.status === "out"
-      ? `Out since ${event.outLabel ?? "—"}`
-      : event.status === "in"
-        ? `Back in ${event.inLabel ?? ""}`.trim()
-        : event.status === "skipped"
-          ? "Staying in today"
-          : `Due ${event.shift}`;
+    column === "out"
+      ? `Since ${event.outLabel ?? "—"}`
+      : column === "done"
+        ? event.status === "in"
+          ? `Back in ${event.inLabel ?? ""}`.trim()
+          : "Skipped today"
+        : `${event.shift} · ${event.spaceName}`;
 
-  const subLine =
-    event.status === "scheduled"
-      ? `${event.shift} · ${event.spaceName}`
-      : event.spaceName;
-
-  const isConflict = display === "conflict";
+  const isConflict = !!event.conflictReason;
 
   const kebab = (
     <div className="relative">
@@ -294,12 +256,12 @@ function BoardItem({
         aria-label={`Actions for ${event.horseName}`}
         aria-expanded={menuOpen}
         onClick={() => setMenuOpen((v) => !v)}
-        className="relative z-40 text-onstride-green/40 hover:text-onstride-green"
+        className="relative z-40 size-8 text-onstride-green/40 hover:text-onstride-green"
       >
         <MoreVertical className="size-4" />
       </Button>
       {menuOpen && (
-        <div className="absolute right-0 top-9 z-50 w-48 overflow-hidden rounded-xl border border-onstride-green/10 bg-popover py-1 shadow-2xl">
+        <div className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-xl border border-onstride-green/10 bg-popover py-1 shadow-2xl">
           <CardActions
             event={event}
             spaces={spaces}
@@ -317,160 +279,117 @@ function BoardItem({
     </div>
   );
 
-  /* ----------------------------- list row ----------------------------- */
-  if (display === "list") {
-    return (
-      <div className="flex items-center gap-3 px-3.5 py-2.5">
-        <div
-          onClick={() => onOpenProfile?.(event.horseId)}
-          className="cursor-pointer"
-        >
-          <HorsePhoto
-            name={event.horseName}
-            photoUrl={event.photoUrl}
-            className="size-10 rounded-lg shrink-0 object-cover"
-            sizesClass="text-sm"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <button
-            type="button"
-            onClick={() => onOpenProfile?.(event.horseId)}
-            className="truncate text-sm font-semibold hover:text-onstride-gold-deep transition-colors text-left"
-          >
-            {event.horseName}
-          </button>
-          <p className="truncate text-xs text-onstride-green/55">
-            {metaLine} · {event.spaceName}
-          </p>
-        </div>
-        {isConflict && (
-          <span className="rounded-full border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[0.65rem] font-semibold text-destructive">
-            Conflict
-          </span>
-        )}
-        {kebab}
-      </div>
-    );
-  }
-
-  /* ------------------------------ cards ------------------------------- */
   return (
     <article
       className={cn(
-        "rounded-2xl border transition-all duration-150 hover:shadow-[var(--shadow-panel)] min-h-[6.25rem] flex flex-col justify-between",
+        "rounded-2xl border transition-all duration-150 hover:shadow-[var(--shadow-panel)]",
         isConflict
           ? "border-destructive/25 bg-destructive/[0.04]"
-          : "border-onstride-green/12 bg-card"
+          : column === "out"
+            ? "border-status-out/20 bg-card"
+            : "border-onstride-green/12 bg-card"
       )}
     >
-      <div className="flex min-h-[6.25rem] items-stretch flex-1">
-        {/* Uniform Left Vertical Rectangle Photo Strip */}
+      <div className="flex items-stretch">
+        {/* Photo */}
         <div
           onClick={() => onOpenProfile?.(event.horseId)}
-          className="w-24 sm:w-26 shrink-0 self-stretch rounded-l-2xl overflow-hidden cursor-pointer group/photo relative bg-muted"
+          className="w-20 shrink-0 cursor-pointer overflow-hidden rounded-l-2xl bg-muted group/photo"
           title={`View ${event.horseName}'s profile`}
         >
           <HorsePhoto
             name={event.horseName}
             photoUrl={event.photoUrl}
             className="h-full w-full object-cover group-hover/photo:scale-105 transition-transform duration-200"
-            sizesClass="text-xl"
+            sizesClass="text-lg"
           />
         </div>
 
-        {/* Content Column */}
+        {/* Content */}
         <div className="flex min-w-0 flex-1 flex-col justify-between p-3">
           <div>
             <div className="flex items-start justify-between gap-1">
               <button
                 type="button"
                 onClick={() => onOpenProfile?.(event.horseId)}
-                className="truncate font-display text-[0.98rem] font-bold text-onstride-green/90 hover:text-onstride-gold-deep text-left transition-colors leading-tight cursor-pointer"
+                className="truncate font-display text-base font-bold text-onstride-green/90 hover:text-onstride-gold-deep text-left transition-colors leading-tight cursor-pointer"
                 title={`View ${event.horseName}'s profile`}
               >
                 {event.horseName}
               </button>
               <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-1">
-                <span className="text-onstride-gold-deep">
-                  {event.status === "out" ? (
-                    <Sun className="size-4" />
-                  ) : event.status === "in" ? (
-                    <CheckCircle2 className="size-4 text-status-in" />
-                  ) : event.status === "skipped" ? (
-                    <Home className="size-4 text-status-skipped" />
-                  ) : (
-                    <Clock className="size-4 text-onstride-sage" />
-                  )}
-                </span>
+                {isConflict && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[0.6rem] font-bold text-destructive">
+                    <ShieldAlert className="size-2.5" />
+                  </span>
+                )}
+                {event.note && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenNoteEditor?.(event);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full border border-amber-500/35 bg-amber-500/15 px-1.5 py-0.5 text-[0.6rem] font-bold text-amber-900 hover:bg-amber-500/25 transition-all cursor-pointer"
+                    title={`Handler note: "${event.note}" (Click to edit)`}
+                  >
+                    <NotebookPen className="size-2.5 text-amber-700" />
+                  </button>
+                )}
                 {kebab}
               </div>
             </div>
-
-            <p className="truncate text-xs font-semibold text-onstride-green/75 mt-0.5">{subLine}</p>
+            <p className="truncate text-sm font-medium text-onstride-green/65 mt-0.5">
+              {metaLine}
+            </p>
           </div>
 
-          <div className="mt-2 flex items-center justify-between gap-1.5">
-            <p className="truncate text-xs text-onstride-green/50">{metaLine}</p>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              {event.note && (
+          {/* One-tap action buttons */}
+          <div className="mt-2.5 flex items-center gap-2">
+            {column === "scheduled" && (
+              <>
+                <form action={markOut.bind(null, event.id)} className="flex-1">
+                  <button
+                    type="submit"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-status-out-strong px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600 active:scale-[0.98]"
+                  >
+                    <Sun className="size-4" />
+                    Turn Out
+                  </button>
+                </form>
+                <form action={markSkipped.bind(null, event.id)}>
+                  <button
+                    type="submit"
+                    className="flex items-center justify-center rounded-xl border border-onstride-green/15 bg-background px-3 py-2.5 text-sm font-semibold text-onstride-green/70 transition-colors hover:bg-muted active:scale-[0.98]"
+                  >
+                    Skip
+                  </button>
+                </form>
+              </>
+            )}
+            {column === "out" && (
+              <form action={markIn.bind(null, event.id)} className="flex-1">
                 <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenNoteEditor?.(event);
-                  }}
-                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/35 bg-amber-500/15 px-1.5 py-0.5 text-[0.62rem] font-bold text-amber-900 hover:bg-amber-500/25 transition-all cursor-pointer shadow-2xs"
-                  title={`Handler note: “${event.note}” (Click to view/edit)`}
+                  type="submit"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-status-in px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-600 active:scale-[0.98]"
                 >
-                  <NotebookPen className="size-3 text-amber-700" />
-                  <span>NOTE</span>
+                  <CheckCircle2 className="size-4" />
+                  Bring In
                 </button>
-              )}
-
-              {isConflict && event.conflictReason && (
-                <span
-                  className="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[0.62rem] font-bold text-destructive cursor-help"
-                  title={`Conflict: ${event.conflictReason}`}
+              </form>
+            )}
+            {column === "done" && (
+              <form action={resetEvent.bind(null, event.id)} className="flex-1">
+                <button
+                  type="submit"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-onstride-green/15 bg-background px-3 py-2.5 text-sm font-semibold text-onstride-green/60 transition-colors hover:bg-muted active:scale-[0.98]"
                 >
-                  <ShieldAlert className="size-2.5" />
-                  <span>CONFLICT</span>
-                </span>
-              )}
-            </div>
+                  <Clock className="size-3.5" />
+                  Undo
+                </button>
+              </form>
+            )}
           </div>
-
-          {isConflict && resolveOpen && (
-            <div className="flex items-center gap-1.5 pt-1.5 border-t border-destructive/15 mt-1.5">
-              <form
-                action={updateEventSpace.bind(null, event.id)}
-                className="flex-1"
-              >
-                <select
-                  name="spaceId"
-                  defaultValue={event.spaceId}
-                  onChange={(e) => {
-                    e.currentTarget.form?.requestSubmit();
-                    setResolveOpen(false);
-                  }}
-                  aria-label={`Move ${event.horseName} to another paddock`}
-                  className="h-7 w-full cursor-pointer rounded-md border border-input bg-card px-1.5 text-xs font-medium text-onstride-green/80 focus-visible:outline-none"
-                >
-                  {spaces.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </form>
-              <form action={markSkipped.bind(null, event.id)}>
-                <Button type="submit" size="sm" variant="outline" className="h-7 text-xs px-2">
-                  Skip
-                </Button>
-              </form>
-            </div>
-          )}
         </div>
       </div>
     </article>
@@ -481,39 +400,51 @@ function BoardItem({
 /* Column shell                                                        */
 /* ------------------------------------------------------------------ */
 
-function StatusColumn({
+function KanbanColumn({
   title,
-  dot,
+  icon: Icon,
+  iconColor,
   count,
   children,
-  footer,
+  defaultOpen = true,
   className,
 }: {
   title: string;
-  dot: string;
+  icon: ComponentType<{ className?: string }>;
+  iconColor: string;
   count: number;
   children: React.ReactNode;
-  footer?: React.ReactNode;
+  defaultOpen?: boolean;
   className?: string;
 }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
   return (
     <section
       className={cn(
-        "flex min-w-0 flex-col rounded-2xl border border-onstride-green/10 bg-[#faf7f1] p-3",
+        "flex min-w-0 flex-col rounded-2xl border border-onstride-green/10 bg-[#faf7f1]",
         className
       )}
     >
-      <header className="mb-3 flex items-center gap-2 px-1">
-        <span className={cn("size-2 rounded-full", dot)} />
-        <h3 className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-onstride-green/70">
-          {title}
-        </h3>
-        <span className="ml-auto rounded-full bg-onstride-green/8 px-2 py-0.5 text-[0.65rem] font-bold tabular-nums text-onstride-green/60">
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex w-full items-center gap-2.5 p-4 text-left transition-colors hover:bg-white/50"
+      >
+        <span className={cn("flex size-8 items-center justify-center rounded-lg", iconColor)}>
+          <Icon className="size-4" />
+        </span>
+        <h3 className="font-display text-sm font-bold text-onstride-green/90">{title}</h3>
+        <span className="ml-auto rounded-full bg-onstride-green/8 px-2 py-0.5 text-xs font-bold tabular-nums text-onstride-green/60">
           {count}
         </span>
-      </header>
-      <div className="flex flex-col gap-2">{children}</div>
-      {footer}
+        {isOpen ? (
+          <ChevronUp className="size-4 text-onstride-green/40" />
+        ) : (
+          <ChevronDown className="size-4 text-onstride-green/40" />
+        )}
+      </button>
+      {isOpen && <div className="flex flex-col gap-2 px-3 pb-3">{children}</div>}
     </section>
   );
 }
@@ -522,7 +453,7 @@ const ACTIVITY_TONE: Record<string, string> = {
   success: "bg-status-in/15 text-status-in",
   info: "bg-status-out/20 text-status-out-strong",
   alert: "bg-destructive/12 text-destructive",
-muted: "bg-muted text-muted-foreground",
+  muted: "bg-muted text-muted-foreground",
 };
 
 /* ------------------------------------------------------------------ */
@@ -536,8 +467,8 @@ export function BoardClient({
   allHorses,
   spaceOptions,
   activity,
-  shiftMatrix,
-  specialGroups,
+  shiftMatrix: _shiftMatrix, // eslint-disable-line @typescript-eslint/no-unused-vars
+  specialGroups: _specialGroups, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: {
   dateISO: string;
   events: BoardEventDto[];
@@ -569,10 +500,6 @@ export function BoardClient({
   specialGroups: SpecialGroup[];
 }) {
   const [query, setQuery] = useState("");
-  const [shiftFilter, setShiftFilter] = useState<"all" | "AM" | "PM">("all");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [groupBy, setGroupBy] = useState<"status" | "shift">("status");
-  const [view, setView] = useState<"grid" | "list">("grid");
   const [showAllActivity, setShowAllActivity] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedHorseId, setSelectedHorseId] = useState<string>("");
@@ -589,16 +516,11 @@ export function BoardClient({
         : events,
     [events, q]
   );
-  const visible = useMemo(
-    () =>
-      shiftFilter === "all"
-        ? filtered
-        : filtered.filter((e) => e.shift === shiftFilter),
-    [filtered, shiftFilter]
-  );
 
-  const byStatus = (status: string) => visible.filter((e) => e.status === status);
-  const conflicts = visible.filter((e) => e.conflictReason);
+  const outEvents = filtered.filter((e) => e.status === "out");
+  const scheduledEvents = filtered.filter((e) => e.status === "scheduled");
+  const doneEvents = filtered.filter((e) => e.status === "in" || e.status === "skipped");
+  const conflicts = filtered.filter((e) => e.conflictReason);
   const offBoardFiltered = offBoard.filter((h) =>
     q ? h.name.toLowerCase().includes(q) : true
   );
@@ -661,107 +583,70 @@ export function BoardClient({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search horses…"
-            className="h-9 bg-card pl-9"
+            className="h-10 bg-card pl-9 text-sm"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            onClick={() => openAddModal()}
-            size="sm"
-            className="h-9 gap-1.5 rounded-lg font-semibold"
-          >
-            <Plus className="size-4" /> Add turnout
-          </Button>
-          {/* Shift filter */}
-          <div className="relative">
-            {filterOpen && (
-              <button
-                type="button"
-                aria-label="Close filter"
-                className="fixed inset-0 z-30 cursor-default"
-                onClick={() => setFilterOpen(false)}
-              />
-            )}
-            <Button
-              variant="outline"
-              onClick={() => setFilterOpen((v) => !v)}
-              aria-expanded={filterOpen}
-              className={cn(
-                "relative z-40 h-9 rounded-lg",
-                shiftFilter !== "all" && "border-onstride-gold text-onstride-gold-deep"
-              )}
-            >
-              Filter{shiftFilter !== "all" ? `: ${shiftFilter}` : ""}
-            </Button>
-            {filterOpen && (
-              <div className="absolute right-0 top-10 z-40 w-40 overflow-hidden rounded-xl border border-onstride-green/10 bg-popover py-1 shadow-[var(--shadow-panel-lg)]">
-                {(["all", "AM", "PM"] as const).map((option) => (
-                  <MenuItemButton
-                    key={option}
-                    onClick={() => {
-                      setShiftFilter(option);
-                      setFilterOpen(false);
-                    }}
-                  >
-                    {option === "all" ? "Both shifts" : `${option} shift only`}
-                    {shiftFilter === option && (
-                      <CheckCircle2 className="ml-auto size-3.5 text-onstride-gold-deep" />
-                    )}
-                  </MenuItemButton>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <label className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 h-9">
-            <span className="text-xs font-medium text-onstride-green/55">Group by</span>
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value as "status" | "shift")}
-              aria-label="Group board by"
-              className="cursor-pointer bg-transparent pr-1 text-xs font-semibold text-onstride-green outline-none"
-            >
-              <option value="status">Status</option>
-              <option value="shift">Shift</option>
-            </select>
-          </label>
-
-          <div className="flex overflow-hidden rounded-lg border border-border">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              aria-pressed={view === "grid"}
-              aria-label="Grid view"
-              className={cn(
-                "flex size-9 items-center justify-center transition-colors",
-                view === "grid"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-onstride-green/50 hover:text-onstride-green"
-              )}
-            >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              aria-pressed={view === "list"}
-              aria-label="List view"
-              className={cn(
-                "flex size-9 items-center justify-center transition-colors",
-                view === "list"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-onstride-green/50 hover:text-onstride-green"
-              )}
-            >
-              <List className="size-4" />
-            </button>
-          </div>
-        </div>
+        <Button
+          onClick={() => openAddModal()}
+          size="default"
+          className="h-10 gap-1.5 rounded-xl font-semibold"
+        >
+          <Plus className="size-4" /> Add Turnout
+        </Button>
       </div>
 
+      {/* Conflict Banner */}
+      {conflicts.length > 0 && (
+        <div className="rounded-2xl border border-destructive/25 bg-destructive/[0.06] p-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-destructive/15">
+              <ShieldAlert className="size-5 text-destructive" />
+            </div>
+            <div>
+              <h3 className="font-display text-sm font-bold text-destructive">
+                {conflicts.length} Conflict{conflicts.length > 1 ? "s" : ""} Detected
+              </h3>
+              <p className="text-xs text-destructive/70">
+                Horses with compatibility issues are sharing a paddock. Resolve by moving one to a different space.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {conflicts.map((event) => (
+              <div
+                key={event.id}
+                className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-background px-3 py-2"
+              >
+                <HorseAvatar
+                  name={event.horseName}
+                  photoUrl={event.photoUrl}
+                  size="sm"
+                />
+                <span className="text-sm font-semibold text-onstride-green/80">{event.horseName}</span>
+                <span className="text-xs text-destructive/70">in {event.spaceName}</span>
+                <form action={updateEventSpace.bind(null, event.id)}>
+                  <select
+                    name="spaceId"
+                    defaultValue={event.spaceId}
+                    onChange={(e) => e.currentTarget.form?.requestSubmit()}
+                    className="h-7 cursor-pointer rounded-md border border-input bg-card px-1.5 text-xs font-medium text-onstride-green/80 focus-visible:outline-none"
+                  >
+                    {spaceOptions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </form>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
-      {visible.length === 0 && offBoardFiltered.length === 0 ? (
+      {filtered.length === 0 && offBoardFiltered.length === 0 ? (
         <div className="panel flex flex-col items-center gap-2 border-dashed px-6 py-14 text-center">
           <Sun className="size-8 text-onstride-gold" />
           <p className="font-display text-xl font-semibold">No horses match</p>
@@ -770,270 +655,120 @@ export function BoardClient({
             from the schedule above.
           </p>
         </div>
-      ) : view === "list" ? (
-        /* ------------------------------ list ------------------------------ */
-        <div className="panel divide-y divide-onstride-green/8 p-0">
-          {(["out", "scheduled", "in", "skipped"] as const).flatMap((status) =>
-            byStatus(status).map((event) => (
-              <BoardItem
-                key={`l-${event.id}`}
-                event={event}
-                spaces={spaceOptions}
-                display={"list"}
-                onOpenProfile={openProfile}
-                onOpenNoteEditor={openNoteEditor}
-              />
-            ))
-          )}
-        </div>
-      ) : groupBy === "status" ? (
-        /* ------------------------- kanban: status ------------------------ */
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.15fr]">
-          <StatusColumn {...columnProps(STATUS_META.out, byStatus("out").length)}>
-            {byStatus("out").map((event) => (
-              <BoardItem
-                key={event.id}
-                event={event}
-                spaces={spaceOptions}
-                display="card-out"
-                onOpenProfile={openProfile}
-                onOpenNoteEditor={openNoteEditor}
-              />
-            ))}
-          </StatusColumn>
-
-          <StatusColumn
-            {...columnProps(STATUS_META.scheduled, byStatus("scheduled").length)}
-          >
-            {byStatus("scheduled").map((event) => (
-              <BoardItem
-                key={event.id}
-                event={event}
-                spaces={spaceOptions}
-                display="card"
-                onOpenProfile={openProfile}
-                onOpenNoteEditor={openNoteEditor}
-              />
-            ))}
-          </StatusColumn>
-
-          <div className="flex min-w-0 flex-col gap-4">
-            <StatusColumn {...columnProps(STATUS_META.in, byStatus("in").length)}>
-              {byStatus("in").map((event) => (
-                <BoardItem
-                  key={event.id}
-                  event={event}
-                  spaces={spaceOptions}
-                  display="card"
-                  onOpenProfile={openProfile}
-                  onOpenNoteEditor={openNoteEditor}
-                />
-              ))}
-            </StatusColumn>
-            <StatusColumn
-              {...columnProps(STATUS_META.skipped, byStatus("skipped").length)}
-            >
-              {byStatus("skipped").map((event) => (
-                <BoardItem
-                  key={event.id}
-                  event={event}
-                  spaces={spaceOptions}
-                  display="card"
-                  onOpenProfile={openProfile}
-                  onOpenNoteEditor={openNoteEditor}
-                />
-              ))}
-            </StatusColumn>
-            <StatusColumn title="Not on the board" dot="bg-onstride-green/25" count={offBoardFiltered.length}>
-              {offBoardFiltered.map((horse) => (
-                <article
-                  key={horse.id}
-                  className="rounded-2xl border border-dashed border-onstride-green/20 bg-card/60 transition-all hover:bg-card hover:border-onstride-gold/40 hover:shadow-xs min-h-[6.25rem] flex flex-col justify-between"
-                >
-                  <div className="flex min-h-[6.25rem] items-stretch flex-1">
-                    <div
-                      onClick={() => openProfile(horse.id)}
-                      className="w-24 sm:w-26 shrink-0 self-stretch rounded-l-2xl overflow-hidden cursor-pointer group/photo relative bg-muted"
-                      title={`View ${horse.name}'s profile`}
-                    >
-                      <HorsePhoto
-                        name={horse.name}
-                        photoUrl={horse.photoUrl}
-                        className="h-full w-full object-cover opacity-85 group-hover/photo:opacity-100 group-hover/photo:scale-105 transition-all duration-200"
-                        sizesClass="text-xl"
-                      />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col justify-between p-3.5">
-                      <div className="flex items-start justify-between gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openProfile(horse.id)}
-                          className="truncate font-display text-[0.98rem] font-bold text-onstride-green/90 hover:text-onstride-gold-deep text-left transition-colors leading-tight cursor-pointer"
-                          title={`View ${horse.name}'s profile`}
-                        >
-                          {horse.name}
-                        </button>
-                        <EyeOff className="size-3.5 shrink-0 text-onstride-green/35 -mr-0.5 -mt-0.5" />
-                      </div>
-                      <div className="mt-1">
-                        <p className="text-xs font-semibold text-onstride-green/60">No turnout today</p>
-                        <p className="text-xs italic text-onstride-green/40">Day off</p>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={() => openAddModal(horse.id)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-onstride-gold-deep hover:text-onstride-gold transition-colors"
-                        >
-                          <Plus className="size-3.5" /> Add to today
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </StatusColumn>
-          </div>
-
-          <StatusColumn
-            title="Conflicts"
-            dot="bg-destructive"
-            count={conflicts.length}
-            footer={
-              conflicts.length > 0 ? (
-                <p className="mt-3 px-1 text-[0.65rem] leading-relaxed text-onstride-green/45">
-                  Horses appear here and in their status column. Resolve by moving
-                  one of them to another paddock.
-                </p>
-              ) : undefined
-            }
-          >
-            {conflicts.map((event) => (
-              <BoardItem
-                key={`c-${event.id}`}
-                event={event}
-                spaces={spaceOptions}
-                display="conflict"
-                onOpenProfile={openProfile}
-                onOpenNoteEditor={openNoteEditor}
-              />
-            ))}
-          </StatusColumn>
-        </div>
       ) : (
-        /* ------------------------- kanban: shift -------------------------- */
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          {(["AM", "PM"] as const).map((shift) => {
-            const isAM = shift === "AM";
-            const Icon = isAM ? Sun : Moon;
-            const shiftEvents = visible.filter((e) => e.shift === shift);
-            return (
-              <section
-                key={shift}
-                className="rounded-2xl border border-onstride-green/10 bg-[#faf7f1] p-4"
-              >
-                <header className="mb-4 flex items-center gap-3.5">
-                  <span
-                    className={cn(
-                      "flex size-11 items-center justify-center rounded-full border",
-                      isAM
-                        ? "border-status-out/40 bg-status-out/15 text-status-out-strong"
-                        : "border-onstride-pine/25 bg-onstride-pine/10 text-onstride-moss"
-                    )}
-                  >
-                    <Icon className="size-5" />
-                  </span>
-                  <div>
-                    <h2 className="font-display text-xl font-semibold leading-tight">
-                      {isAM ? "Morning shift" : "Afternoon shift"}
-                    </h2>
-                    <p className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-onstride-green/45">
-                      {shift} · {shiftEvents.length}{" "}
-                      {shiftEvents.length === 1 ? "turnout" : "turnouts"}
-                    </p>
-                  </div>
-                </header>
+        /* 3-Column Kanban */
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* Out Now Column */}
+          <KanbanColumn
+            title="Out Now"
+            icon={Sun}
+            iconColor="bg-amber-100 text-amber-700"
+            count={outEvents.length}
+          >
+            {outEvents.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-onstride-green/15 py-6 text-center text-sm text-onstride-green/45">
+                No horses out right now.
+              </p>
+            ) : (
+              outEvents.map((event) => (
+                <BoardItem
+                  key={event.id}
+                  event={event}
+                  spaces={spaceOptions}
+                  column="out"
+                  onOpenProfile={openProfile}
+                  onOpenNoteEditor={openNoteEditor}
+                />
+              ))
+            )}
+          </KanbanColumn>
 
-                {shiftEvents.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-onstride-green/15 py-8 text-center text-xs text-onstride-green/45">
-                    Nothing scheduled for this shift.
-                  </p>
-                ) : (
-                  [...new Set(shiftEvents.map((e) => e.spaceId))].map((spaceId) => {
-                    const residents = shiftEvents.filter((e) => e.spaceId === spaceId);
-                    return (
-                      <div key={spaceId} className="mb-5 last:mb-0">
-                        <p className="mb-2 flex items-center gap-2 text-[0.72rem] font-bold uppercase tracking-[0.16em] text-onstride-green/65">
-                          {residents[0].spaceName}
-                          <span className="rounded-md border border-onstride-green/15 bg-background px-1.5 py-px text-[0.65rem] font-medium normal-case tracking-normal text-onstride-green/50">
-                            {residents.length}
-                          </span>
-                        </p>
-                        <div className="flex flex-col gap-2">
-                          {residents.map((event) => (
-                            <BoardItem
-                              key={event.id}
-                              event={event}
-                              spaces={[]}
-                              display="card"
-                              onOpenProfile={openProfile}
-                              onOpenNoteEditor={openNoteEditor}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </section>
-            );
-          })}
+          {/* Scheduled Column */}
+          <KanbanColumn
+            title="Scheduled"
+            icon={Clock}
+            iconColor="bg-amber-50 text-amber-600"
+            count={scheduledEvents.length}
+          >
+            {scheduledEvents.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-onstride-green/15 py-6 text-center text-sm text-onstride-green/45">
+                Nothing scheduled.
+              </p>
+            ) : (
+              scheduledEvents.map((event) => (
+                <BoardItem
+                  key={event.id}
+                  event={event}
+                  spaces={spaceOptions}
+                  column="scheduled"
+                  onOpenProfile={openProfile}
+                  onOpenNoteEditor={openNoteEditor}
+                />
+              ))
+            )}
+          </KanbanColumn>
+
+          {/* Done Column (collapsed by default) */}
+          <KanbanColumn
+            title="Done"
+            icon={CheckCircle2}
+            iconColor="bg-emerald-50 text-emerald-600"
+            count={doneEvents.length}
+            defaultOpen={false}
+          >
+            {doneEvents.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-onstride-green/15 py-6 text-center text-sm text-onstride-green/45">
+                No completed turnouts yet.
+              </p>
+            ) : (
+              doneEvents.map((event) => (
+                <BoardItem
+                  key={event.id}
+                  event={event}
+                  spaces={spaceOptions}
+                  column="done"
+                  onOpenProfile={openProfile}
+                  onOpenNoteEditor={openNoteEditor}
+                />
+              ))
+            )}
+          </KanbanColumn>
         </div>
       )}
 
-      {/* Shifts & Groups */}
-      {shiftMatrix.length > 0 && view === "grid" && (
-        <section className="panel p-5">
-          <p className="overline-label mb-4">Shifts &amp; groups</p>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[repeat(auto-fit,minmax(230px,1fr))]">
-            {shiftMatrix.map((row) => {
-              const isAM = row.shift === "AM";
-              return (
-                <div key={row.shift} className="flex flex-col gap-2">
-                  <p className="flex items-center gap-1.5 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-onstride-green/50">
-                    {isAM ? <Sun className="size-3" /> : <Moon className="size-3" />}
-                    {isAM ? "Morning shift" : "Afternoon shift"}
-                  </p>
-                  {row.spaces.map((stat) => (
-                    <SpaceStatRow key={`${row.shift}-${stat.id}`} stat={stat} />
-                  ))}
-                </div>
-              );
-            })}
-            {specialGroups.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-onstride-green/50">
-                  Special groups
-                </p>
-                {specialGroups.map((group) => (
-                  <SpaceStatRow key={group.id} stat={group} />
-                ))}
-              </div>
-            )}
+      {/* Not on Board */}
+      {offBoardFiltered.length > 0 && (
+        <section className="panel p-4">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-onstride-green/50">
+            Not on Board Today ({offBoardFiltered.length})
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {offBoardFiltered.map((horse) => (
+              <button
+                key={horse.id}
+                type="button"
+                onClick={() => openAddModal(horse.id)}
+                className="flex items-center gap-2 rounded-xl border border-dashed border-onstride-green/15 bg-background px-3 py-2 text-sm font-medium text-onstride-green/60 transition-colors hover:border-onstride-gold/40 hover:text-onstride-green hover:bg-muted"
+              >
+                <HorseAvatar name={horse.name} photoUrl={horse.photoUrl} size="sm" />
+                {horse.name}
+                <Plus className="size-3.5 text-onstride-gold" />
+              </button>
+            ))}
           </div>
         </section>
       )}
 
-      {/* Recent activity */}
+      {/* Recent Activity */}
       {activity.length > 0 && (
         <section className="rounded-2xl border border-onstride-green/10 bg-[#faf7f1] p-5">
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <h2 className="font-display text-lg font-bold text-onstride-green/90 leading-tight">
-                Recent Board Activity
+              <h2 className="font-display text-base font-bold text-onstride-green/90 leading-tight">
+                Recent Activity
               </h2>
-              <p className="text-xs text-onstride-green/55">
-                Timestamped log of turnouts and status changes for today
+              <p className="text-xs text-onstride-green/50">
+                Timestamped log of turnouts and status changes
               </p>
             </div>
             {activity.length > 6 && (
@@ -1042,12 +777,12 @@ export function BoardClient({
                 onClick={() => setShowAllActivity((v) => !v)}
                 className="text-xs font-semibold text-onstride-gold-deep hover:underline"
               >
-                {showAllActivity ? "Show less" : `View all ${activity.length} updates`}
+                {showAllActivity ? "Show less" : `View all ${activity.length}`}
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {shownActivity.map((item) => {
               const isSuccess = item.tone === "success";
               const isInfo = item.tone === "info";
@@ -1085,7 +820,7 @@ export function BoardClient({
                         {item.name}
                       </p>
                       {item.timeLabel ? (
-                        <span className="text-[11px] font-bold tabular-nums text-onstride-green/60 shrink-0">
+                        <span className="text-xs font-bold tabular-nums text-onstride-green/60 shrink-0">
                           {item.timeLabel}
                         </span>
                       ) : (
@@ -1095,10 +830,10 @@ export function BoardClient({
                       )}
                     </div>
 
-                    <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                    <div className="mt-1 flex items-center gap-1.5">
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-bold",
+                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold",
                           ACTIVITY_TONE[item.tone]
                         )}
                       >
@@ -1108,7 +843,7 @@ export function BoardClient({
                     </div>
 
                     {item.detail && (
-                      <p className="mt-1 text-[11px] text-onstride-green/55 truncate">
+                      <p className="mt-1 text-xs text-onstride-green/50 truncate">
                         {item.detail}
                       </p>
                     )}
@@ -1130,15 +865,15 @@ export function BoardClient({
           <div className="relative z-50 w-full max-w-md rounded-2xl border border-onstride-green/15 bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-onstride-green/10">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-onstride-gold/15 text-onstride-gold-deep">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-onstride-gold/15 text-onstride-gold-deep">
                   <Plus className="size-5" />
                 </div>
                 <div>
                   <h3 className="font-display text-lg font-bold text-onstride-green/90 leading-tight">
-                    Add Turnout to Board
+                    Add Turnout
                   </h3>
                   <p className="text-xs text-onstride-green/50">
-                    Schedule a horse into a pasture for {dateISO}
+                    Schedule a horse for {dateISO}
                   </p>
                 </div>
               </div>
@@ -1162,7 +897,7 @@ export function BoardClient({
 
               {/* Horse Selector */}
               <div className="space-y-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-onstride-green/55">
+                <label className="text-xs font-bold uppercase tracking-wider text-onstride-green/55">
                   Horse
                 </label>
                 <select
@@ -1193,8 +928,8 @@ export function BoardClient({
 
               {/* Target Turnout Space */}
               <div className="space-y-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-onstride-green/55">
-                  Turnout Space / Paddock
+                <label className="text-xs font-bold uppercase tracking-wider text-onstride-green/55">
+                  Turnout Space
                 </label>
                 <select
                   name="spaceId"
@@ -1211,9 +946,9 @@ export function BoardClient({
                 </select>
               </div>
 
-              {/* Shift Radio / Selector */}
+              {/* Shift */}
               <div className="space-y-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-onstride-green/55">
+                <label className="text-xs font-bold uppercase tracking-wider text-onstride-green/55">
                   Shift
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1221,7 +956,7 @@ export function BoardClient({
                     <label
                       key={shift}
                       className={cn(
-                        "flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all",
+                        "flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-3 text-sm font-bold transition-all",
                         selectedShift === shift
                           ? "border-onstride-gold bg-onstride-gold/10 text-onstride-gold-deep shadow-xs"
                           : "border-onstride-green/10 bg-background text-onstride-green/60 hover:bg-muted/40"
@@ -1237,11 +972,11 @@ export function BoardClient({
                       />
                       {shift === "AM" ? (
                         <>
-                          <Sun className="size-3.5 text-status-out-strong" /> Morning (AM)
+                          <Sun className="size-4 text-amber-600" /> Morning
                         </>
                       ) : (
                         <>
-                          <Moon className="size-3.5 text-onstride-moss" /> Afternoon (PM)
+                          <Moon className="size-4 text-onstride-moss" /> Afternoon
                         </>
                       )}
                     </label>
@@ -1254,13 +989,13 @@ export function BoardClient({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="default"
                   onClick={() => setAddModalOpen(false)}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" size="default">
-                  <Plus className="size-4" /> Add to Today&apos;s Board
+                <Button type="submit" size="default" className="gap-1.5">
+                  <Plus className="size-4" /> Add to Board
                 </Button>
               </div>
             </form>
@@ -1270,128 +1005,10 @@ export function BoardClient({
 
       {/* Edit Note Modal */}
       {editingNoteEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setEditingNoteEvent(null)}
-          />
-          <div className="relative z-50 w-full max-w-lg rounded-2xl border border-onstride-green/15 bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-onstride-green/10">
-              <div className="flex items-center gap-3">
-                <HorseAvatar
-                  name={editingNoteEvent.horseName}
-                  photoUrl={editingNoteEvent.photoUrl}
-                  size="md"
-                />
-                <div>
-                  <h3 className="font-display text-lg font-bold text-onstride-green/90 leading-tight">
-                    Turnout Note · {editingNoteEvent.horseName}
-                  </h3>
-                  <p className="text-xs text-onstride-green/55">
-                    Handler instructions for {editingNoteEvent.spaceName} ({editingNoteEvent.shift} shift)
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingNoteEvent(null)}
-                className="rounded-lg p-1.5 text-onstride-green/40 hover:bg-muted hover:text-onstride-green transition-colors"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            <form
-              action={async (formData) => {
-                await updateEventNote(editingNoteEvent.id, formData);
-                setEditingNoteEvent(null);
-              }}
-              className="mt-4 space-y-4"
-            >
-              <div>
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-onstride-green/55 mb-1.5 block">
-                  Handler Advisory & Notes
-                </label>
-                <textarea
-                  name="note"
-                  defaultValue={editingNoteEvent.note ?? ""}
-                  rows={4}
-                  autoFocus
-                  placeholder="e.g. Needs fly mask, hand-walk only 20 min, keep away from paddock fence…"
-                  className="w-full rounded-xl border border-input bg-background p-3 text-sm text-onstride-green/90 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring resize-none leading-relaxed"
-                />
-              </div>
-
-              {/* Quick Suggestion Preset Chips */}
-              <div>
-                <p className="text-[0.65rem] font-bold uppercase tracking-wider text-onstride-green/50 mb-2">
-                  Quick Presets
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    "Needs fly mask",
-                    "Hand-walk only, 20 min",
-                    "Hold turnout until vet arrives",
-                    "Muzzle on grass",
-                    "First time out with this group",
-                    "Easy keeper · monitor grass",
-                    "Watch near fences",
-                  ].map((chip) => (
-                    <button
-                      key={chip}
-                      type="button"
-                      onClick={(e) => {
-                        const textarea = e.currentTarget
-                          .closest("form")
-                          ?.querySelector("textarea[name=note]") as HTMLTextAreaElement;
-                        if (textarea) {
-                          const current = textarea.value.trim();
-                          textarea.value = current ? `${current} — ${chip}` : chip;
-                        }
-                      }}
-                      className="rounded-full border border-onstride-green/12 bg-background px-2.5 py-1 text-xs font-medium text-onstride-green/70 hover:border-onstride-gold hover:text-onstride-gold-deep hover:bg-onstride-gold/5 transition-all"
-                    >
-                      + {chip}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-onstride-green/10">
-                {editingNoteEvent.note ? (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const fd = new FormData();
-                      fd.append("note", "");
-                      await updateEventNote(editingNoteEvent.id, fd);
-                      setEditingNoteEvent(null);
-                    }}
-                    className="text-xs font-semibold text-destructive hover:underline"
-                  >
-                    Clear note
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingNoteEvent(null)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" size="default">
-                    Save Note
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <NoteEditorModal
+          event={editingNoteEvent}
+          onClose={() => setEditingNoteEvent(null)}
+        />
       )}
 
       {/* Horse Profile Inspector Modal */}
@@ -1421,13 +1038,13 @@ export function BoardClient({
                       {viewingHorse.name}
                     </h3>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full border border-onstride-green/15 bg-onstride-green/8 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-onstride-green/75">
+                      <span className="rounded-full border border-onstride-green/15 bg-onstride-green/8 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-onstride-green/75">
                         {viewingHorse.lifecycle === "rotation"
                           ? "Active Rotation"
                           : (viewingHorse.lifecycle ?? "Active")}
                       </span>
                       {viewingHorse.breed && (
-                        <span className="rounded-full border border-onstride-green/12 px-2 py-0.5 text-[0.65rem] font-medium text-onstride-green/65">
+                        <span className="rounded-full border border-onstride-green/12 px-2 py-0.5 text-xs font-medium text-onstride-green/65">
                           {viewingHorse.breed}
                         </span>
                       )}
@@ -1445,7 +1062,7 @@ export function BoardClient({
 
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <dt className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-onstride-green/45">
+                    <dt className="text-xs font-bold uppercase tracking-wider text-onstride-green/45">
                       Age
                     </dt>
                     <dd className="font-medium text-onstride-green/85">
@@ -1453,7 +1070,7 @@ export function BoardClient({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-onstride-green/45">
+                    <dt className="text-xs font-bold uppercase tracking-wider text-onstride-green/45">
                       Gender
                     </dt>
                     <dd className="capitalize font-medium text-onstride-green/85">
@@ -1464,7 +1081,7 @@ export function BoardClient({
                     </dd>
                   </div>
                   <div className="col-span-2">
-                    <dt className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-onstride-green/45">
+                    <dt className="text-xs font-bold uppercase tracking-wider text-onstride-green/45">
                       Turnout Groups
                     </dt>
                     <dd className="mt-1.5 flex flex-wrap gap-1.5">
@@ -1489,11 +1106,11 @@ export function BoardClient({
                 {/* Horse Permanent Notes */}
                 {viewingHorse.notes && (
                   <div className="mt-4">
-                    <dt className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-onstride-green/45 mb-1">
+                    <dt className="text-xs font-bold uppercase tracking-wider text-onstride-green/45 mb-1">
                       Medical & Behavioral Notes
                     </dt>
                     <p className="border-l-2 border-onstride-gold/60 pl-3 text-xs italic leading-relaxed text-onstride-green/75">
-                      “{viewingHorse.notes}”
+                      &ldquo;{viewingHorse.notes}&rdquo;
                     </p>
                   </div>
                 )}
@@ -1507,9 +1124,9 @@ export function BoardClient({
                       </span>
                       <span className="text-xs font-bold text-onstride-green/90">
                         {viewingHorse.event ? (
-                          viewingHorse.event.status === "out" ? "☀️ Out on pasture" :
-                          viewingHorse.event.status === "in" ? "✅ Back in the barn" :
-                          viewingHorse.event.status === "skipped" ? "🏠 Staying in" : "⏳ Waiting to go out"
+                          viewingHorse.event.status === "out" ? "Out on pasture" :
+                          viewingHorse.event.status === "in" ? "Back in the barn" :
+                          viewingHorse.event.status === "skipped" ? "Staying in" : "Waiting to go out"
                         ) : "Off Board (Day off)"}
                       </span>
                     </div>
@@ -1533,9 +1150,9 @@ export function BoardClient({
                 <div className="mt-6 flex items-center justify-between gap-3 pt-4 border-t border-onstride-green/10">
                   <Link
                     href={`/horses/${viewingHorse.id}/edit`}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-onstride-green/70 hover:text-onstride-green"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-onstride-green/70 hover:text-onstride-green"
                   >
-                    <Pencil className="size-3.5" /> Edit horse profile
+                    <Pencil className="size-3.5" /> Edit horse
                   </Link>
 
                   {viewingHorse.event && (
@@ -1549,7 +1166,7 @@ export function BoardClient({
                       }}
                       className="gap-1.5"
                     >
-                      <NotebookPen className="size-3.5" /> Edit turnout note
+                      <NotebookPen className="size-3.5" /> Edit note
                     </Button>
                   )}
                 </div>
@@ -1560,61 +1177,179 @@ export function BoardClient({
       )}
     </div>
   );
-
-  function columnProps(
-    meta: { label: string; dot: string },
-    count: number
-  ) {
-    return { title: meta.label, dot: meta.dot, count };
-  }
 }
 
-function SpaceStatRow({
-  stat,
+/* ------------------------------------------------------------------ */
+/* Note Editor Modal — 2-column preset grid, auto-save                 */
+/* ------------------------------------------------------------------ */
+
+const COMMON_PRESETS = [
+  { label: "Too wet — keep in", icon: "💧" },
+  { label: "Lameness — stall rest", icon: "🦶" },
+  { label: "Colic watch — monitor", icon: "🩺" },
+  { label: "Farrier today — no turnout", icon: "🔨" },
+  { label: "New horse — separate paddock", icon: "🆕" },
+  { label: "Hot weather — extra water", icon: "🌡️" },
+  { label: "Off feed — monitor", icon: "📋" },
+  { label: "Rough coat — supplement", icon: "✨" },
+];
+
+const HANDLER_PRESETS = [
+  { label: "Needs fly mask", icon: "🪰" },
+  { label: "Hand-walk only, 20 min", icon: "🚶" },
+  { label: "Hold turnout until vet arrives", icon: "🩺" },
+  { label: "Muzzle on grass", icon: "🌿" },
+  { label: "First time out with this group", icon: "👥" },
+  { label: "Easy keeper — monitor grass", icon: "🍽️" },
+  { label: "Watch near fences", icon: "🏗️" },
+  { label: "Injured — hand-walk only", icon: "⚠️" },
+];
+
+function NoteEditorModal({
+  event,
+  onClose,
 }: {
-  stat: {
-    id: string;
-    name: string;
-    type?: string;
-    chip?: string;
-    count: number;
-    capacity: number | null;
-    conflict?: boolean;
-  };
+  event: BoardEventDto;
+  onClose: () => void;
 }) {
-  const conflict = Boolean(stat.conflict);
-  const chip = stat.type ?? stat.chip ?? "";
+  const [noteValue, setNoteValue] = useState(event.note ?? "");
+
+  const handlePresetClick = (preset: string) => {
+    const current = noteValue.trim();
+    const newValue = current ? `${current} — ${preset}` : preset;
+    setNoteValue(newValue);
+  };
+
+  const handleSave = async () => {
+    const fd = new FormData();
+    fd.append("note", noteValue);
+    await updateEventNote(event.id, fd);
+    onClose();
+  };
+
+  const handleClear = async () => {
+    const fd = new FormData();
+    fd.append("note", "");
+    await updateEventNote(event.id, fd);
+    onClose();
+  };
+
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-onstride-green/8 bg-background px-3 py-2">
-      <p className="min-w-0 truncate text-xs font-semibold text-onstride-green/80">
-        {stat.name}
-        <span className="ml-1.5 rounded border border-onstride-green/12 px-1 py-px text-[0.58rem] font-medium normal-case text-onstride-green/50">
-          {chip}
-        </span>
-      </p>
-      {conflict && (
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[0.6rem] font-bold text-destructive">
-          <ShieldAlert className="size-2.5" /> Conflict
-        </span>
-      )}
-      <CapacityMini count={stat.count} capacity={stat.capacity} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+      <div className="relative z-50 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-onstride-green/15 bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-onstride-green/10">
+          <div className="flex items-center gap-3">
+            <HorseAvatar
+              name={event.horseName}
+              photoUrl={event.photoUrl}
+              size="md"
+            />
+            <div>
+              <h3 className="font-display text-lg font-bold text-onstride-green/90 leading-tight">
+                Turnout Note
+              </h3>
+              <p className="text-xs text-onstride-green/55">
+                {event.horseName} · {event.spaceName} ({event.shift})
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-onstride-green/40 hover:bg-muted hover:text-onstride-green transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Textarea */}
+        <div className="mt-4">
+          <label className="text-xs font-bold uppercase tracking-wider text-onstride-green/55 mb-1.5 block">
+            Handler Notes
+          </label>
+          <textarea
+            value={noteValue}
+            onChange={(e) => setNoteValue(e.target.value)}
+            rows={3}
+            autoFocus
+            placeholder="Add notes for the handler..."
+            className="w-full rounded-xl border border-input bg-background p-3 text-sm text-onstride-green/90 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring resize-none leading-relaxed"
+          />
+        </div>
+
+        {/* Common Presets - 2-column grid */}
+        <div className="mt-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-onstride-green/50 mb-2">
+            Common Reasons to Keep In
+          </p>
+          <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
+            {COMMON_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => handlePresetClick(preset.label)}
+                className="flex items-center gap-2 rounded-lg border border-onstride-green/10 bg-background px-2.5 py-2.5 text-left text-sm font-medium text-onstride-green/70 transition-all hover:border-onstride-gold hover:text-onstride-green hover:bg-onstride-gold/5 active:scale-[0.98]"
+              >
+                <span className="text-base">{preset.icon}</span>
+                <span className="truncate">{preset.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Handler Advisories - 2-column grid */}
+        <div className="mt-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-onstride-green/50 mb-2">
+            Handler Advisories
+          </p>
+          <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
+            {HANDLER_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => handlePresetClick(preset.label)}
+                className="flex items-center gap-2 rounded-lg border border-onstride-green/10 bg-background px-2.5 py-2.5 text-left text-sm font-medium text-onstride-green/70 transition-all hover:border-onstride-gold hover:text-onstride-green hover:bg-onstride-gold/5 active:scale-[0.98]"
+              >
+                <span className="text-base">{preset.icon}</span>
+                <span className="truncate">{preset.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-4 mt-4 border-t border-onstride-green/10">
+          {event.note ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="text-sm font-semibold text-destructive hover:underline"
+            >
+              Clear note
+            </button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="default"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button type="button" size="default" onClick={handleSave}>
+              Save Note
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-function CapacityMini({
-  count,
-  capacity,
-}: {
-  count: number;
-  capacity: number | null;
-}) {
-  const over = capacity != null && count > capacity;
-  return (
-    <span className="shrink-0 text-[0.65rem] font-bold tabular-nums text-onstride-green/50">
-      <span className={cn(over && "text-destructive")}>{count}</span>/
-      {capacity ?? "—"}
-    </span>
-  );
-}
-

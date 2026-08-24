@@ -1,10 +1,11 @@
 import { generateFromSchedule } from "./actions";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Sun, ClipboardList, Fence, Users, ScrollText, ShieldAlert } from "lucide-react";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { todayDateOnly, SHIFTS } from "@/lib/schedule";
 import { buildConflictLookup } from "@/lib/compatibility";
-import { PageHeader } from "@/components/page-header";
 import { formatTime } from "@/lib/format";
+import { HorsePhoto } from "@/components/horse-photo";
 import { BoardClient, type BoardEventDto } from "./board-client";
 
 export default async function BoardPage({
@@ -50,6 +51,15 @@ export default async function BoardPage({
     }),
     prisma.space.findMany({ orderBy: { name: "asc" } }),
     prisma.compatibilityRule.findMany(),
+  ]);
+
+  // Fetch setup counts for quick links
+  const [horseCount, spaceCount, groupCount, ruleCount, compatCount] = await Promise.all([
+    prisma.horse.count({ where: { lifecycle: "rotation" } }),
+    prisma.space.count(),
+    prisma.group.count(),
+    prisma.scheduleRule.count(),
+    prisma.compatibilityRule.count(),
   ]);
 
   const conflictLookup = buildConflictLookup(compatRules);
@@ -113,6 +123,24 @@ export default async function BoardPage({
       lifecycle: h.lifecycle,
       groups: h.groups.map((g) => g.group.name),
     }));
+
+  // Status counts for the strip
+  const outNow = events.filter((e) => e.status === "out");
+  const waiting = events.filter((e) => e.status === "scheduled");
+  const backIn = events.filter((e) => e.status === "in");
+  const skipped = events.filter((e) => e.status === "skipped");
+  let conflictCount = 0;
+  for (const group of bySpaceShift.values()) {
+    const horseIds = group.map((e) => e.horseId);
+    for (let i = 0; i < horseIds.length; i++) {
+      for (let j = i + 1; j < horseIds.length; j++) {
+        const reason = conflictLookup.get(
+          [horseIds[i], horseIds[j]].sort().join("::")
+        );
+        if (reason !== undefined) conflictCount++;
+      }
+    }
+  }
 
   /**
    * Recent activity, derived straight from the day's timestamps —
@@ -250,38 +278,121 @@ export default async function BoardPage({
       : []),
   ];
 
+
+  const stats = [
+    { label: "Out Now", value: outNow.length, accent: "text-status-out-strong", bg: "bg-status-out/10" },
+    { label: "Scheduled", value: waiting.length, accent: "text-amber-600", bg: "bg-amber-500/10" },
+    { label: "Back In", value: backIn.length, accent: "text-status-in", bg: "bg-emerald-500/10" },
+    { label: "Skipped", value: skipped.length, accent: "text-status-skipped", bg: "bg-gray-500/10" },
+    { label: "Conflicts", value: conflictCount, accent: "text-destructive", bg: "bg-red-500/10" },
+  ];
+
+  const setupLinks = [
+    { href: "/barn?tab=horses", icon: ClipboardList, label: "Horses", count: horseCount },
+    { href: "/barn?tab=spaces", icon: Fence, label: "Spaces", count: spaceCount },
+    { href: "/barn?tab=groups", icon: Users, label: "Groups", count: groupCount },
+    { href: "/barn?tab=rules", icon: ScrollText, label: "Rules", count: ruleCount },
+    { href: "/barn?tab=compatibility", icon: ShieldAlert, label: "Compat", count: compatCount },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        backHref={!isToday ? "/board" : undefined}
-        kicker={`Operations · ${boardDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          timeZone: "UTC",
-        })}`}
-        title={isToday ? "Today's Board" : isPast ? "Past Board" : "Upcoming Board"}
-        description={
-          isToday
-            ? "Every horse at a glance — run the day straight from the board."
-            : "You're viewing a different day than today. Today's board is one click away."
-        }
-        actions={
-          <div className="flex items-center gap-2">
-            <form action={generateFromSchedule}>
-              <input type="hidden" name="date" value={boardDate.toISOString().slice(0, 10)} />
-              <button
-                type="submit"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <RefreshCw className="size-3.5 text-onstride-gold-deep" />
-                Generate from schedule
-              </button>
-            </form>
-          </div>
-        }
-      />
+      {/* Page Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-onstride-green/50">
+            {boardDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              timeZone: "UTC",
+            })}
+          </p>
+          <h1 className="font-display text-2xl font-bold text-onstride-green/90 sm:text-3xl">
+            {isToday ? "Today's Board" : isPast ? "Past Board" : "Upcoming Board"}
+          </h1>
+          <p className="mt-1 text-sm text-onstride-green/55">
+            {isToday
+              ? "Everything you need for today's turnout operations."
+              : "Viewing a different day. Today's board is one click away."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isToday && (
+            <Link
+              href="/board"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+            >
+              Back to Today
+            </Link>
+          )}
+          <form action={generateFromSchedule}>
+            <input type="hidden" name="date" value={boardDate.toISOString().slice(0, 10)} />
+            <button
+              type="submit"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+            >
+              <RefreshCw className="size-3.5 text-onstride-gold-deep" />
+              Generate from Schedule
+            </button>
+          </form>
+        </div>
+      </div>
 
+      {/* Status Strip */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className={`panel px-4 py-4 ${stat.bg}`}
+          >
+            <p className={`font-display text-3xl font-semibold ${stat.accent}`}>
+              {stat.value}
+            </p>
+            <p className="mt-1 text-xs font-medium uppercase tracking-wide text-onstride-green/55">
+              {stat.label}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      {/* Active Turnout Strip */}
+      {outNow.length > 0 && (
+        <section className="panel border border-status-out/20 bg-status-out/5 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sun className="size-4 text-amber-600" />
+              <h2 className="font-display text-sm font-bold text-onstride-green/90">
+                Out Right Now
+              </h2>
+              <span className="rounded-full bg-status-out/20 px-2 py-0.5 text-xs font-bold text-amber-800">
+                {outNow.length}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {outNow.map((event) => (
+              <div
+                key={event.id}
+                className="flex shrink-0 items-center gap-3 rounded-xl border border-onstride-green/10 bg-card px-3 py-2"
+              >
+                <HorsePhoto
+                  name={event.horse.name}
+                  photoUrl={event.horse.photoUrl}
+                  className="size-10 rounded-lg object-cover"
+                  sizesClass="text-sm"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-onstride-green/90">{event.horse.name}</p>
+                  <p className="text-xs text-onstride-green/60">{event.space.name}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Board Client */}
       <BoardClient
         dateISO={boardDate.toISOString().slice(0, 10)}
         events={dtoEvents}
@@ -298,6 +409,31 @@ export default async function BoardPage({
         shiftMatrix={shiftMatrix}
         specialGroups={specialGroups}
       />
+
+      {/* Barn Setup Quick Links */}
+      <section className="panel p-4">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-onstride-green/50">
+          Barn Setup
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {setupLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-2 rounded-lg border border-onstride-green/10 bg-background px-3 py-2 text-sm font-medium text-onstride-green/70 transition-colors hover:border-onstride-gold/40 hover:text-onstride-green"
+              >
+                <Icon className="size-4 text-onstride-gold/70" />
+                {link.label}
+                <span className="rounded-full bg-onstride-green/8 px-1.5 py-0.5 text-xs font-bold text-onstride-green/50">
+                  {link.count}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
