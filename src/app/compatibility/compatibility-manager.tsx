@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { HorseAvatar } from "@/components/horse-avatar";
@@ -256,9 +257,9 @@ export function CompatibilityManager({
           </div>
 
           <div className="pt-2 flex justify-end">
-            <Button type="submit" size="default">
+            <SubmitButton size="default" pendingText="Saving rule…">
               <ShieldAlert data-icon="inline-start" className="size-4" /> Save Compatibility Rule
-            </Button>
+            </SubmitButton>
           </div>
         </form>
       </section>

@@ -44,7 +44,17 @@ export async function updateSpace(id: string, formData: FormData) {
 }
 
 export async function deleteSpace(id: string) {
-  await prisma.space.delete({ where: { id } });
+  await prisma.$transaction([
+    prisma.turnoutEvent.deleteMany({ where: { spaceId: id } }),
+    prisma.scheduleRule.updateMany({
+      where: { defaultSpaceId: id },
+      data: { defaultSpaceId: null },
+    }),
+    prisma.space.delete({ where: { id } }),
+  ]);
 
   revalidatePath("/spaces");
+  revalidatePath("/board");
+  revalidatePath("/map");
+  revalidatePath("/rules");
 }

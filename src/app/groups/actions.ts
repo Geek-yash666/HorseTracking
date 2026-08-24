@@ -50,9 +50,12 @@ export async function updateGroup(id: string, formData: FormData) {
 
 export async function deleteGroup(id: string) {
   await prisma.$transaction([
+    prisma.scheduleRule.deleteMany({ where: { groupId: id } }),
     prisma.groupHorse.deleteMany({ where: { groupId: id } }),
     prisma.group.delete({ where: { id } }),
   ]);
 
   revalidatePath("/groups");
+  revalidatePath("/rules");
+  revalidatePath("/board");
 }

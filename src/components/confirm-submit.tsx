@@ -1,36 +1,37 @@
 "use client";
 
-import { useRef } from "react";
+import { useFormStatus } from "react-dom";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 /**
  * A submit button that confirms before firing its form's server action.
- * Uses the native confirm dialog on purpose: it blocks reliably inside
- * progressive-enhancement forms (no JS state to get out of sync) and
- * works the same on every device a barn hand might be holding.
+ * Uses the native confirm dialog and disables during submission to prevent duplicate clicks.
  */
 export function ConfirmSubmit({
   message,
   children,
   ...props
-}: Omit<ButtonProps, "type" | "onClick"> & { message: string }) {
-  const clickedRef = useRef(false);
+}: Omit<ButtonProps, "type"> & { message: string }) {
+  const { pending } = useFormStatus();
 
   return (
     <Button
       {...props}
       type="submit"
+      disabled={pending || props.disabled}
+      aria-disabled={pending || props.disabled}
       onClick={(event) => {
-        if (clickedRef.current) return; // second click after confirm
-        if (!window.confirm(message)) {
+        if (pending) {
           event.preventDefault();
           return;
         }
-        clickedRef.current = true;
-        // Reset in case the action fails and the form stays mounted.
-        window.setTimeout(() => (clickedRef.current = false), 1000);
+        if (!window.confirm(message)) {
+          event.preventDefault();
+        }
       }}
     >
+      {pending && <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />}
       {children}
     </Button>
   );

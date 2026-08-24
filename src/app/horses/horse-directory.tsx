@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
   Cake,
   EllipsisVertical,
@@ -41,7 +42,40 @@ export type DirectoryHorse = {
   lifecycle: string;
   photoUrl: string | null;
   groups: string[];
+  eventsCount?: number;
+  activeEventsCount?: number;
+  scheduleRulesCount?: number;
 };
+
+function getHorseDeleteWarning(horse: DirectoryHorse): string {
+  const warnings: string[] = [];
+
+  if (horse.activeEventsCount && horse.activeEventsCount > 0) {
+    warnings.push(
+      `is currently active in ${horse.activeEventsCount} turnout event(s) on Today's Board`
+    );
+  } else if (horse.eventsCount && horse.eventsCount > 0) {
+    warnings.push(`has ${horse.eventsCount} turnout event(s) on record`);
+  }
+
+  if (horse.groups && horse.groups.length > 0) {
+    warnings.push(
+      `is assigned to ${horse.groups.length} turnout group(s) (${horse.groups.join(", ")})`
+    );
+  }
+
+  if (horse.scheduleRulesCount && horse.scheduleRulesCount > 0) {
+    warnings.push(
+      `is part of ${horse.scheduleRulesCount} recurring schedule rule(s)`
+    );
+  }
+
+  if (warnings.length > 0) {
+    return `⚠️ WARNING: ${horse.name} ${warnings.join(", and ")}.\n\nDeleting ${horse.name} will immediately remove them from Today's Board, group rosters, and turnout schedules.\n\nAre you sure you want to permanently delete ${horse.name}?`;
+  }
+
+  return `Delete ${horse.name}? This can't be undone.`;
+}
 
 type SortKey = "name-asc" | "name-desc" | "age-asc" | "age-desc";
 
@@ -102,12 +136,10 @@ function StatBlock({
 }
 
 function KebabMenu({
-  horseId,
-  name,
+  horse,
   onView,
 }: {
-  horseId: string;
-  name: string;
+  horse: DirectoryHorse;
   onView: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -125,7 +157,7 @@ function KebabMenu({
       <Button
         variant="ghost"
         size="icon-sm"
-        aria-label={`Actions for ${name}`}
+        aria-label={`Actions for ${horse.name}`}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className="relative z-40 text-onstride-green/45 hover:text-onstride-green"
@@ -145,15 +177,15 @@ function KebabMenu({
             <UserRound className="size-3.5 opacity-60" /> View profile
           </button>
           <Link
-            href={`/horses/${horseId}/edit`}
+            href={`/horses/${horse.id}/edit`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-muted"
           >
             <Pencil className="size-3.5 opacity-60" /> Edit
           </Link>
-          <form action={deleteHorse.bind(null, horseId)} className="block">
+          <form action={deleteHorse.bind(null, horse.id)} className="block">
             <ConfirmSubmit
-              message={`Delete ${name}? This can't be undone.`}
+              message={getHorseDeleteWarning(horse)}
               variant="ghost"
               size="sm"
               className="w-full justify-start rounded-none px-3 py-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -505,8 +537,7 @@ export function HorseDirectory({ horses }: { horses: DirectoryHorse[] }) {
                           </div>
                         </div>
                         <KebabMenu
-                          horseId={horse.id}
-                          name={horse.name}
+                          horse={horse}
                           onView={() => setViewing(horse)}
                         />
                       </div>
@@ -546,8 +577,7 @@ export function HorseDirectory({ horses }: { horses: DirectoryHorse[] }) {
                   </div>
                   <MetaRow horse={horse} className="hidden md:flex" />
                   <KebabMenu
-                    horseId={horse.id}
-                    name={horse.name}
+                    horse={horse}
                     onView={() => setViewing(horse)}
                   />
                 </div>
@@ -678,6 +708,20 @@ export function HorseDirectory({ horses }: { horses: DirectoryHorse[] }) {
                     </p>
                   )}
 
+                  {((viewing.eventsCount && viewing.eventsCount > 0) ||
+                    (viewing.groups && viewing.groups.length > 0) ||
+                    (viewing.scheduleRulesCount && viewing.scheduleRulesCount > 0)) && (
+                    <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-950 font-medium">
+                      <AlertTriangle className="size-4 shrink-0 text-amber-600 mt-0.5" />
+                      <span>
+                        <strong>Scheduled horse:</strong> Assigned to{" "}
+                        {viewing.groups.length > 0 ? viewing.groups.join(", ") : "turnout groups"}
+                        {viewing.eventsCount ? ` with ${viewing.eventsCount} board event(s)` : ""}.
+                        Deleting will clear all associated schedule events.
+                      </span>
+                    </div>
+                  )}
+
                   <div className="mt-auto flex flex-wrap items-center gap-2 pt-6 border-t border-onstride-green/8 mt-6">
                     <Button
                       render={<Link href={`/horses/${viewing.id}/edit`} />}
@@ -688,7 +732,7 @@ export function HorseDirectory({ horses }: { horses: DirectoryHorse[] }) {
                     </Button>
                     <form action={deleteHorse.bind(null, viewing.id)}>
                       <ConfirmSubmit
-                        message={`Delete ${viewing.name}? This can't be undone.`}
+                        message={getHorseDeleteWarning(viewing)}
                         variant="ghost"
                         size="sm"
                         className="text-destructive hover:bg-destructive/10 hover:text-destructive"

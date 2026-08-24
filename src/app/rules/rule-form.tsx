@@ -1,5 +1,5 @@
 import type { GroupModel, ScheduleRuleModel, SpaceModel } from "@/generated/prisma/models";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -112,7 +112,7 @@ export function RuleForm({
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit">{submitLabel}</Button>
+        <SubmitButton>{submitLabel}</SubmitButton>
       </div>
     </form>
   );

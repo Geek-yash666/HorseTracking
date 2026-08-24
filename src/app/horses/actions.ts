@@ -82,7 +82,20 @@ export async function updateHorse(id: string, formData: FormData) {
 }
 
 export async function deleteHorse(id: string) {
-  await prisma.horse.delete({ where: { id } });
+  await prisma.$transaction([
+    prisma.groupHorse.deleteMany({ where: { horseId: id } }),
+    prisma.turnoutEvent.deleteMany({ where: { horseId: id } }),
+    prisma.compatibilityRule.deleteMany({
+      where: {
+        OR: [{ horseAId: id }, { horseBId: id }],
+      },
+    }),
+    prisma.horse.delete({ where: { id } }),
+  ]);
 
   revalidatePath("/horses");
+  revalidatePath("/board");
+  revalidatePath("/map");
+  revalidatePath("/groups");
+  revalidatePath("/compatibility");
 }
