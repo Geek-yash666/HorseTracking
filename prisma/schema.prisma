@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Horse {
+  id        String   @id @default(cuid())
+  name      String
+  notes     String?
+  // "rotation" | "training" | "retired" — only rotation horses are
+  // scheduled onto the board; replaces the old boolean `active`.
+  lifecycle String   @default("rotation")
+  breed     String? // e.g. "Holsteiner"
+  gender    String? // "mare" | "gelding" | "stallion"
+  ageYears  Int? // whole years, updated by hand or at annual review
+  photoUrl  String? // uploaded (data URL) or picked from /public/horses
+  groups    GroupHorse[]
+  events    TurnoutEvent[]
+  compatA   CompatibilityRule[] @relation("HorseA")
+  compatB   CompatibilityRule[] @relation("HorseB")
+}
+
+model Space {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // "paddock" | "field" | "ring"
+  capacity  Int?
+  notes     String?  // e.g. "too wet — pull from rotation"
+  events    TurnoutEvent[]
+  rules     ScheduleRule[]
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  notes     String?
+  horses    GroupHorse[]
+  rules     ScheduleRule[]
+}
+
+model GroupHorse {
+  groupId   String
+  horseId   String
+  group     Group  @relation(fields: [groupId], references: [id])
+  horse     Horse  @relation(fields: [horseId], references: [id])
+  @@id([groupId, horseId])
+}
+
+model ScheduleRule {
+  id              String   @id @default(cuid())
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id])
+  daysOfWeek      Int[]    // 0=Sun .. 6=Sat
+  shift           String   // "AM" | "PM"
+  defaultSpaceId  String?
+  defaultSpace    Space?   @relation(fields: [defaultSpaceId], references: [id])
+  durationMin     Int?
+}
+
+model TurnoutEvent {
+  id            String    @id @default(cuid())
+  date          DateTime  // day this event belongs to (date only, no time)
+  horseId       String
+  horse         Horse     @relation(fields: [horseId], references: [id])
+  spaceId       String
+  space         Space     @relation(fields: [spaceId], references: [id])
+  shift         String    // "AM" | "PM"
+  status        String    // "scheduled" | "out" | "in" | "skipped"
+  actualOutTime DateTime?
+  actualInTime  DateTime?
+  note          String?   // weather, injury, handler flag, swap reason, etc.
+
+  @@unique([date, horseId, shift])
+}
+
+model CompatibilityRule {
+  id       String @id @default(cuid())
+  horseAId String
+  horseBId String
+  horseA   Horse  @relation("HorseA", fields: [horseAId], references: [id])
+  horseB   Horse  @relation("HorseB", fields: [horseBId], references: [id])
+  reason   String? // e.g. "kicks", "in heat"
+}
